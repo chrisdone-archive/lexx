@@ -18,7 +18,9 @@ module Lexx
   , prettyPrintHtml
   -- * Terminal
   , prettyWrite
+  , prettyWriteLimited
   , prettyPrintTerm
+  , prettyPrintTermLimited
   , commandsToRainbow
   ) where
 
@@ -166,6 +168,21 @@ prettyPrintTerm now =
   Rainbow.chunksToByteStrings Rainbow.toByteStringsColors8 .
   ([Rainbow.underline (Rainbow.bold (fromString (show now))), "\n"] <>) .
   Lexx.commandsToRainbow . Lexx.lexx . show
+
+prettyWriteLimited :: (Show a, MonadIO m) => Int -> a -> m ()
+prettyWriteLimited limit x =
+  liftIO
+    (do now <- getCurrentTime
+        write now x)
+  where
+    write now = S8.putStrLn . prettyPrintTermLimited limit now
+
+prettyPrintTermLimited :: (Show a) => Int -> UTCTime -> a -> S8.ByteString
+prettyPrintTermLimited limit now =
+  S.concat .
+  Rainbow.chunksToByteStrings Rainbow.toByteStringsColors8 .
+  ([Rainbow.underline (Rainbow.bold (fromString (show now))), "\n"] <>) .
+  Lexx.commandsToRainbow . Lexx.lexx . take limit . show
 
 prettyPrintHtml :: (Show a) => a -> L.ByteString
 prettyPrintHtml = renderBS . commandsToHtml . Lexx.lexx . show
